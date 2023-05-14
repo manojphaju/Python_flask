@@ -25,6 +25,10 @@ class users(db.Model):
 def admin():
     return render_template('index.html')
 
+@app.route("/view")
+def view():
+    return render_template('view.html', values=users.query.all())
+
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
@@ -32,6 +36,20 @@ def login():
         # setting session permanent as defined above
         session.permanent = True
         session['user'] = user
+
+        found_user = users.query.filter_by(name=user).first()
+        # for delete user
+        # found_user = users.query.filter_by(name=user).delete()
+        # for user in found_user:
+        #     user.delete()
+        if found_user:
+            session['email'] = found_user.email
+            
+        else:
+            usr = users(user, '')
+            db.session.add(usr)
+            db.session.commit()
+
         flash('Login Succesful!')
         return redirect(url_for('user'))
     else:
@@ -49,6 +67,9 @@ def user():
         if request.method == 'POST':
             email=request.form['email']
             session['email']=email
+            found_user = users.query.filter_by(name=user).first()
+            found_user.email = email
+            db.session.commit()
             flash('Email was saved')
         else:
             if 'email' in session:
